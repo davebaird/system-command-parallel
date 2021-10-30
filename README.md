@@ -55,7 +55,7 @@ preserved and replaced on object destruction.
 
 ## Methods
 
-- new(%args)
+- `new( %args )`
 
         max_kids        - (default 0, probably doesn't make much sense...)
         timeout         - terminate kids after they get too old. Default 0 - don't.
@@ -72,7 +72,7 @@ preserved and replaced on object destruction.
 
         $code_ref->($cmd, $id) ;
 
-- spawn(%args)
+- `spawn( %args )`
 
     Launches a new child, if there are currently fewer than `$max_processes` running.
     If there are too many processes, `spawn()` will block until a slot becomes available.
@@ -84,46 +84,30 @@ preserved and replaced on object destruction.
     Returns the backend object (`System::Command` by default). Be careful not to call any blocking
     methods on it e.g. `loop_on()` for `System::Command`.
 
-- wait(\[timeout\])
+- `wait( $timeout )`
 
     Blocking wait (with optional timeout) for all remaining child processes.
 
     Returns 1 if all kids were reaped, 0 otherwise, in which case the surviving kids
     are available in `kids`.
 
-- send\_signal( signal )
+- `send_signal( $signal )`
 
     Send a signal to all kids.
 
-- \*
-
-    kids
+- `kids`
 
     Hashref storing backend objects representing the kids, keyed by PID.
 
-- \*
-
-    `count_kids`
+- `count_kids`
 
     Currently alive kids.
 
 ## Helpers
 
-- `read_lines_nb(fh)`
+- `read_lines_nb( $fh )`
 
     A function, not a method.
 
     Non-blocking read. Fetches any available lines from the filehandle, without
     blocking for EOF.
-
-# POD ERRORS
-
-Hey! **The above document had some coding errors, which are explained below:**
-
-- Around line 130:
-
-    Expected text after =item, not a bullet
-
-- Around line 137:
-
-    Expected text after =item, not a bullet

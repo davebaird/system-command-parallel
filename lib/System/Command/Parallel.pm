@@ -82,7 +82,7 @@ preserved and replaced on object destruction.
 
 =over 4
 
-=item new(%args)
+=item C<new( %args )>
 
     max_kids        - (default 0, probably doesn't make much sense...)
     timeout         - terminate kids after they get too old. Default 0 - don't.
@@ -100,7 +100,7 @@ call.
     $code_ref->($cmd, $id) ;
 
 
-=item spawn(%args)
+=item C<spawn( %args )>
 
 Launches a new child, if there are currently fewer than C<$max_processes> running.
 If there are too many processes, C<spawn()> will block until a slot becomes available.
@@ -114,7 +114,7 @@ methods on it e.g. C<loop_on()> for C<System::Command>.
 
 
 
-=item wait([timeout])
+=item C<wait( $timeout )>
 
 Blocking wait (with optional timeout) for all remaining child processes.
 
@@ -122,21 +122,17 @@ Returns 1 if all kids were reaped, 0 otherwise, in which case the surviving kids
 are available in C<kids>.
 
 
-=item send_signal( signal )
+=item C<send_signal( $signal )>
 
 Send a signal to all kids.
 
 
-=item *
-
-kids
+=item C<kids>
 
 Hashref storing backend objects representing the kids, keyed by PID.
 
 
-=item *
-
-C<count_kids>
+=item C<count_kids>
 
 Currently alive kids.
 
@@ -146,7 +142,7 @@ Currently alive kids.
 
 =over 4
 
-=item * C<read_lines_nb(fh)>
+=item C<read_lines_nb( $fh )>
 
 A function, not a method.
 
