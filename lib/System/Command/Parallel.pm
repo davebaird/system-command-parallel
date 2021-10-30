@@ -17,47 +17,72 @@ no warnings qw(experimental::signatures) ;
 
 our @EXPORT_OK = qw(read_lines_nb) ;
 
-=pod DESCRIPTION
 
-C<Parallel::ForkManager> doesn't play well with spawned processes. This module
-provides similar functionality for C<System::Command>.
+=pod
 
-NOTE: my testing has so far failed to demonstrate any problem with C<Parallel::ForkManager>. Ho hum.
+=encoding UTF-8
 
-Anyway. This module at least saves an extra fork. C<System::Command> handles the
-forking, while this module keeps track of the kids.
+=head1 NAME
 
-=pod SYNOPSIS
+System::Command::Parallel - manage parallel system commands
 
-    use Local::System::Command::Parallel ;
+=head1 SYNOPSIS
+
+    use System::Command::Parallel qw(read_lines_nb);
 
     my $count_success = 0 ;
     my $count_errors  = 0 ;
+
+    my $run_while_alive = sub {
+        my ( $cmd, $id ) = @_ ;
+        print STDOUT "$_\n" for read_lines_nb( $cmd->stdout ) ;
+        print STDERR "$_\n" for read_lines_nb( $cmd->stderr ) ;
+        } ;
 
     my $run_on_reap = sub {
         my ($cmd, $id) = @_ ;
         $cmd->exit == 0 ? $count_success++ : $count_errors++ ;
         } ;
 
-    my $sp = Local::System::Command::Parallel->new(
-        max_kids    => 10,
-        run_on_reap => $run_on_reap,
+    my $sp = System::Command::Parallel->new(
+        max_kids        => 10,
+        timeout         => 60,
+        run_on_reap     => $run_on_reap,
+        run_while_alive => $run_while_alive,
+        debug           => 1,
         ) ;
 
     my $exe = '/usr/bin/some-prog' ;
 
     while ( my ($id, @args) = get_id_and_args_from_somewhere() ) {
-        $sp->spawn( [$exe, @args, { trace => 3 }], $id ) ;  # id is optional
+        $sp->spawn(
+            cmdline => [ $exe, @args ],
+            id      => $id,             # optional
+            extra   => { trace => 3 },  # passed to backend
         }
 
-    $sp->wait ;
+    $sp->wait($optional_timeout) ;
 
-=item Signal handlers
+
+=head1 DESCRIPTION
+
+The backend (default is C<System::Command>) handles the
+forking, while this module keeps track of the kids.
+
+=head2 Backends
+
+The default backend is C<System::Command>. A backend for C<Proc::Background> is also provided.
+Other backends can be added very simply.
+
+
+=head2 Signal handlers
 
 The constructor installs signal handlers for INT and TERM. The original handlers are
 preserved and replaced on object destruction.
 
-=over METHODS
+=head2 METHODS
+
+=over 4
 
 =item new(%args)
 
@@ -86,6 +111,11 @@ optional C<id>.
 Returns the C<System::Command> object, but be careful not to call any blocking
 methods on it e.g. C<loop_on()>.
 
+=back
+
+=head2 Constructor attributes
+
+=over 4
 
 =item run_on_spawn($code_ref)
 
@@ -101,6 +131,7 @@ call.
 
 After the C<run_on_reap> code ref completes, C<$cmd->close> is called automatically.
 
+=back
 
 =cut
 
