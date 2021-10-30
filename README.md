@@ -111,15 +111,3 @@ preserved and replaced on object destruction.
 
     Non-blocking read. Fetches any available lines from the filehandle, without
     blocking for EOF.
-
-# POD ERRORS
-
-Hey! **The above document had some coding errors, which are explained below:**
-
-- Around line 118:
-
-    '=item' outside of any '=over'
-
-- Around line 144:
-
-    &#x3d;over without closing =back

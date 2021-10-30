@@ -112,7 +112,6 @@ The optional C<id> is passed to the callbacks.
 Returns the backend object (C<System::Command> by default). Be careful not to call any blocking
 methods on it e.g. C<loop_on()> for C<System::Command>.
 
-=back
 
 
 =item wait([timeout])
@@ -149,6 +148,8 @@ A function, not a method.
 
 Non-blocking read. Fetches any available lines from the filehandle, without
 blocking for EOF.
+
+=back
 
 =cut
 
