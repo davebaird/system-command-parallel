@@ -53,7 +53,7 @@ Other backends can be added very simply.
 The constructor installs signal handlers for INT and TERM. The original handlers are
 preserved and replaced on object destruction.
 
-## METHODS
+## Methods
 
 - new(%args)
 
@@ -65,7 +65,7 @@ preserved and replaced on object destruction.
         debug           - default 0
         backend         - default 'System::Command'
 
-    After a child is spawned/reaped, or intermittently while it lives, the code ref is called.
+    After a child is spawned/reaped, or intermittently while it lives, the relevant code ref is called.
     It is passed the backend object (default uses `System::Command`)
     representing the command/process, and the id (if any) provided in the `spawn()`
     call.
@@ -77,11 +77,12 @@ preserved and replaced on object destruction.
     Launches a new child, if there are currently fewer than `$max_processes` running.
     If there are too many processes, `spawn()` will block until a slot becomes available.
 
-    Accepts the same arguments as `System::Command->new()`, plus an additional
-    optional `id`.
+    Arguments are passed to the backend to instantiate an object representing the command.
 
-    Returns the `System::Command` object, but be careful not to call any blocking
-    methods on it e.g. `loop_on()`.
+    The optional `id` is passed to the callbacks.
+
+    Returns the backend object (`System::Command` by default). Be careful not to call any blocking
+    methods on it e.g. `loop_on()` for `System::Command`.
 
 - wait(\[timeout\])
 
@@ -94,13 +95,19 @@ preserved and replaced on object destruction.
 
     Send a signal to all kids.
 
+- kids
+
+    Hashref storing backend objects representing the kids, keyed by PID.
+
 - count\_kids
 
     Currently alive kids.
 
-## Utility function
+## Helpers
 
 - read\_lines\_nb(fh)
+
+    A function, not a method.
 
     Non-blocking read. Fetches any available lines from the filehandle, without
     blocking for EOF.
@@ -109,10 +116,10 @@ preserved and replaced on object destruction.
 
 Hey! **The above document had some coding errors, which are explained below:**
 
-- Around line 117:
+- Around line 118:
 
     '=item' outside of any '=over'
 
-- Around line 138:
+- Around line 144:
 
     &#x3d;over without closing =back

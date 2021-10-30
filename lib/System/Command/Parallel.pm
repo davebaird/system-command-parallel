@@ -78,7 +78,7 @@ Other backends can be added very simply.
 The constructor installs signal handlers for INT and TERM. The original handlers are
 preserved and replaced on object destruction.
 
-=head2 METHODS
+=head2 Methods
 
 =over 4
 
@@ -92,7 +92,7 @@ preserved and replaced on object destruction.
     debug           - default 0
     backend         - default 'System::Command'
 
-After a child is spawned/reaped, or intermittently while it lives, the code ref is called.
+After a child is spawned/reaped, or intermittently while it lives, the relevant code ref is called.
 It is passed the backend object (default uses C<System::Command>)
 representing the command/process, and the id (if any) provided in the C<spawn()>
 call.
@@ -105,11 +105,12 @@ call.
 Launches a new child, if there are currently fewer than C<$max_processes> running.
 If there are too many processes, C<spawn()> will block until a slot becomes available.
 
-Accepts the same arguments as C<System::Command-E<gt>new()>, plus an additional
-optional C<id>.
+Arguments are passed to the backend to instantiate an object representing the command.
 
-Returns the C<System::Command> object, but be careful not to call any blocking
-methods on it e.g. C<loop_on()>.
+The optional C<id> is passed to the callbacks.
+
+Returns the backend object (C<System::Command> by default). Be careful not to call any blocking
+methods on it e.g. C<loop_on()> for C<System::Command>.
 
 =back
 
@@ -126,18 +127,25 @@ are available in C<kids>.
 
 Send a signal to all kids.
 
+
+=item kids
+
+Hashref storing backend objects representing the kids, keyed by PID.
+
+
 =item count_kids
 
 Currently alive kids.
 
-
 =back
 
-=head2 Utility function
+=head2 Helpers
 
 =over 4
 
 =item read_lines_nb(fh)
+
+A function, not a method.
 
 Non-blocking read. Fetches any available lines from the filehandle, without
 blocking for EOF.
