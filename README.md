@@ -99,7 +99,7 @@ preserved and replaced on object destruction.
 
     Hashref storing backend objects representing the kids, keyed by PID.
 
-- count\_kids
+- \* count\_kids
 
     Currently alive kids.
 
@@ -111,3 +111,11 @@ preserved and replaced on object destruction.
 
     Non-blocking read. Fetches any available lines from the filehandle, without
     blocking for EOF.
+
+# POD ERRORS
+
+Hey! **The above document had some coding errors, which are explained below:**
+
+- Around line 135:
+
+    Expected text after =item, not a bullet

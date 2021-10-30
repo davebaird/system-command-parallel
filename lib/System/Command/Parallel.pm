@@ -132,7 +132,7 @@ Send a signal to all kids.
 Hashref storing backend objects representing the kids, keyed by PID.
 
 
-=item count_kids
+=item * count_kids
 
 Currently alive kids.
 
@@ -142,9 +142,7 @@ Currently alive kids.
 
 =over 4
 
-=item *
-
-C<read_lines_nb(fh)>
+=item * C<read_lines_nb(fh)>
 
 A function, not a method.
 
