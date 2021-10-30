@@ -95,11 +95,15 @@ preserved and replaced on object destruction.
 
     Send a signal to all kids.
 
-- kids
+- \*
+
+    kids
 
     Hashref storing backend objects representing the kids, keyed by PID.
 
-- \* count\_kids
+- \*
+
+    `count_kids`
 
     Currently alive kids.
 
@@ -116,6 +120,10 @@ preserved and replaced on object destruction.
 
 Hey! **The above document had some coding errors, which are explained below:**
 
-- Around line 135:
+- Around line 130:
+
+    Expected text after =item, not a bullet
+
+- Around line 137:
 
     Expected text after =item, not a bullet

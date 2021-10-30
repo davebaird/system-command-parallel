@@ -127,12 +127,16 @@ are available in C<kids>.
 Send a signal to all kids.
 
 
-=item kids
+=item *
+
+kids
 
 Hashref storing backend objects representing the kids, keyed by PID.
 
 
-=item * count_kids
+=item *
+
+C<count_kids>
 
 Currently alive kids.
 
