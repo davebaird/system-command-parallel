@@ -17,7 +17,6 @@ no warnings qw(experimental::signatures) ;
 
 our @EXPORT_OK = qw(read_lines_nb) ;
 
-
 =pod
 
 =encoding UTF-8
@@ -49,7 +48,6 @@ System::Command::Parallel - manage parallel system commands
         timeout         => 60,
         run_on_reap     => $run_on_reap,
         run_while_alive => $run_while_alive,
-        debug           => 1,
         ) ;
 
     my $exe = '/usr/bin/some-prog' ;
@@ -86,26 +84,28 @@ preserved and replaced on object destruction.
 
 =item new(%args)
 
-    max_kids     - (default 0, probably doesn't make much sense...)
-    timeout      - terminate kids after they get too old. Default 0 - don't.
-
-
-Take care that these do not block:
-    run_on_reap  - coderef
-    run_on_spawn - coderef
+    max_kids        - (default 0, probably doesn't make much sense...)
+    timeout         - terminate kids after they get too old. Default 0 - don't.
+    run_on_reap     - coderef
+    run_on_spawn    - coderef
     run_while_alive - coderef
+    debug           - default 0
+    backend         - default 'System::Command'
 
-    debug        - default 0
+After a child is spawned/reaped, or intermittently while it lives, the code ref is called.
+It is passed the backend object (default uses C<System::Command>)
+representing the command/process, and the id (if any) provided in the C<spawn()>
+call.
 
-    backend - default 'System::Command'
+    $code_ref->($cmd, $id) ;
 
 
-=item spawn($system_command_args, [$id])
+=item spawn(%args)
 
 Launches a new child, if there are currently fewer than C<$max_processes> running.
 If there are too many processes, C<spawn()> will block until a slot becomes available.
 
-Accepts the same arguments as C<System::Command->new()>, plus an additional
+Accepts the same arguments as C<System::Command-E<gt>new()>, plus an additional
 optional C<id>.
 
 Returns the C<System::Command> object, but be careful not to call any blocking
@@ -113,25 +113,34 @@ methods on it e.g. C<loop_on()>.
 
 =back
 
-=head2 Constructor attributes
+
+=item wait([timeout])
+
+Blocking wait (with optional timeout) for all remaining child processes.
+
+Returns 1 if all kids were reaped, 0 otherwise, in which case the surviving kids
+are available in C<kids>.
+
+
+=item send_signal( signal )
+
+Send a signal to all kids.
+
+=item count_kids
+
+Currently alive kids.
+
+
+=back
+
+=head2 Utility function
 
 =over 4
 
-=item run_on_spawn($code_ref)
+=item read_lines_nb(fh)
 
-=item run_on_reap($code_ref)
-
-=item run_while_alive($code_ref)
-
-After a child is spawned/reaped, this code_ref is called. It is passed the C<System::Command>
-object representing the command/process, and the id (if any) provided in the C<spawn()>
-call.
-
-    $code_ref->($cmd, $id) ;
-
-After the C<run_on_reap> code ref completes, C<$cmd->close> is called automatically.
-
-=back
+Non-blocking read. Fetches any available lines from the filehandle, without
+blocking for EOF.
 
 =cut
 
@@ -318,17 +327,6 @@ sub _older_than ( $self, $age ) {
 #     grep { $self->kids->{$_}->{started} < $age } sort keys $self->kids->%* ;
 #     }
 
-=pod
-
-=item wait([$timeout])
-
-Blocking wait (with optional timeout) for all remaining child processes.
-
-Returns 1 if all kids were reaped, 0 otherwise, in which case the surviving kids
-are available in C<kids>.
-
-=cut
-
 # clean up all remaining procs
 sub wait ( $self, $timeout = undef ) {
     my $timed_out = sub {
@@ -350,14 +348,6 @@ sub wait ( $self, $timeout = undef ) {
 
     return $self->count_kids ? 0 : 1 ;
     }
-
-=pod
-
-=item send_signal( $signal )
-
-Send a signal to all kids.
-
-=cut
 
 
 sub send_signal ( $self, $sig ) {
@@ -389,14 +379,18 @@ sub read_lines_nb ($fh) {
     my $n   = sysread( $fh, $buf, 1024 * 1024 ) ;
 
     # If we're done, make sure to send the last unfinished line
-    return ( 1, $nonblockGetLines_last{$fh} ) unless $n ;
+    # return ( 1, $nonblockGetLines_last{$fh} ) unless $n ;
+    return $nonblockGetLines_last{$fh} unless $n ;
 
     # Prepend the last unfinished line
     $buf = $nonblockGetLines_last{$fh} . $buf ;
 
     # And save any newly unfinished lines
     $nonblockGetLines_last{$fh} = ( substr( $buf, -1 ) !~ /[\r\n]/ && $buf =~ s/([^\r\n]*)$// ) ? $1 : '' ;
-    $buf ? ( 0, split( /\n/, $buf ) ) : (0) ;
+
+    # $buf ? ( 0, split( /\n/, $buf ) ) : (0) ;
+    return split( /\n/, $buf ) if $buf ;
+    return ;
     }
 
 1 ;

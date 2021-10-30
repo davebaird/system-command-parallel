@@ -25,7 +25,6 @@ System::Command::Parallel - manage parallel system commands
         timeout         => 60,
         run_on_reap     => $run_on_reap,
         run_while_alive => $run_while_alive,
-        debug           => 1,
         ) ;
 
     my $exe = '/usr/bin/some-prog' ;
@@ -58,60 +57,62 @@ preserved and replaced on object destruction.
 
 - new(%args)
 
-        max_kids     - (default 0, probably doesn't make much sense...)
-        timeout      - terminate kids after they get too old. Default 0 - don't.
+        max_kids        - (default 0, probably doesn't make much sense...)
+        timeout         - terminate kids after they get too old. Default 0 - don't.
+        run_on_reap     - coderef
+        run_on_spawn    - coderef
+        run_while_alive - coderef
+        debug           - default 0
+        backend         - default 'System::Command'
 
-    Take care that these do not block:
-        run\_on\_reap  - coderef
-        run\_on\_spawn - coderef
-        run\_while\_alive - coderef
+    After a child is spawned/reaped, or intermittently while it lives, the code ref is called.
+    It is passed the backend object (default uses `System::Command`)
+    representing the command/process, and the id (if any) provided in the `spawn()`
+    call.
 
-        debug        - default 0
+        $code_ref->($cmd, $id) ;
 
-        backend - default 'System::Command'
-
-- spawn($system\_command\_args, \[$id\])
+- spawn(%args)
 
     Launches a new child, if there are currently fewer than `$max_processes` running.
     If there are too many processes, `spawn()` will block until a slot becomes available.
 
-    Accepts the same arguments as `System::Command-`new()>, plus an additional
+    Accepts the same arguments as `System::Command->new()`, plus an additional
     optional `id`.
 
     Returns the `System::Command` object, but be careful not to call any blocking
     methods on it e.g. `loop_on()`.
 
-## Constructor attributes
-
-- run\_on\_spawn($code\_ref)
-- run\_on\_reap($code\_ref)
-- run\_while\_alive($code\_ref)
-
-    After a child is spawned/reaped, this code\_ref is called. It is passed the `System::Command`
-    object representing the command/process, and the id (if any) provided in the `spawn()`
-    call.
-
-        $code_ref->($cmd, $id) ;
-
-    After the `run_on_reap` code ref completes, `$cmd-`close> is called automatically.
-
-- wait(\[$timeout\])
+- wait(\[timeout\])
 
     Blocking wait (with optional timeout) for all remaining child processes.
 
     Returns 1 if all kids were reaped, 0 otherwise, in which case the surviving kids
     are available in `kids`.
 
-- send\_signal( $signal )
+- send\_signal( signal )
 
     Send a signal to all kids.
+
+- count\_kids
+
+    Currently alive kids.
+
+## Utility function
+
+- read\_lines\_nb(fh)
+
+    Non-blocking read. Fetches any available lines from the filehandle, without
+    blocking for EOF.
 
 # POD ERRORS
 
 Hey! **The above document had some coding errors, which are explained below:**
 
-- Around line 323:
+- Around line 117:
 
     '=item' outside of any '=over'
+
+- Around line 138:
 
     &#x3d;over without closing =back
