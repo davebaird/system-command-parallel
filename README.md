@@ -105,7 +105,7 @@ preserved and replaced on object destruction.
 
 ## Helpers
 
-- read\_lines\_nb(fh)
+- `read_lines_nb(fh)`
 
     A function, not a method.
 

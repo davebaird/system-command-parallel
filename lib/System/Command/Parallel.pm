@@ -142,7 +142,9 @@ Currently alive kids.
 
 =over 4
 
-=item read_lines_nb(fh)
+=item *
+
+C<read_lines_nb(fh)>
 
 A function, not a method.
 
