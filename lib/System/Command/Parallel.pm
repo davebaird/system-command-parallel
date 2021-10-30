@@ -5,17 +5,12 @@ use warnings ;
 
 use Types::Standard qw( Int Bool HashRef CodeRef Str Maybe ) ;
 use Nice::Try ;
-
 use Moo ;
 use namespace::clean ;
-
 use Exporter qw(import) ;
-
 use feature qw(signatures) ;
 
 no warnings qw(experimental::signatures) ;
-
-our @EXPORT_OK = qw(read_lines_nb) ;
 
 =pod
 
@@ -34,8 +29,8 @@ System::Command::Parallel - manage parallel system commands
 
     my $run_while_alive = sub {
         my ( $cmd, $id ) = @_ ;
-        print STDOUT "$_\n" for read_lines_nb( $cmd->stdout ) ;
-        print STDERR "$_\n" for read_lines_nb( $cmd->stderr ) ;
+        print STDOUT "$id: $_\n" for read_lines_nb( $cmd->stdout ) ;
+        print STDERR "$id: $_\n" for read_lines_nb( $cmd->stderr ) ;
         } ;
 
     my $run_on_reap = sub {
@@ -52,14 +47,16 @@ System::Command::Parallel - manage parallel system commands
 
     my $exe = '/usr/bin/some-prog' ;
 
-    while ( my ($id, @args) = get_id_and_args_from_somewhere() ) {
+    while ( my ($name, @args) = get_name_and_args_from_somewhere() ) {
+        state $c = 0 ;
         $sp->spawn(
             cmdline => [ $exe, @args ],
-            id      => $id,             # optional
+            id      => sprintf( "%4d $name", ++$c),             # optional
             extra   => { trace => 3 },  # passed to backend
         }
 
     $sp->wait($optional_timeout) ;
+
 
 
 =head1 DESCRIPTION
@@ -154,21 +151,20 @@ blocking for EOF.
 =cut
 
 # ===== PACKAGE GLOBALS ========================================================
+our @EXPORT_OK = qw(read_lines_nb) ;
 
 # ===== FILE GLOBALS ===========================================================
 
 # ===== ATTRIBUTES =============================================================
-has max_kids => ( is => 'ro', isa => Int->where('$_ >= 0'), default => 0 ) ;
-has timeout  => ( is => 'ro', isa => Int->where('$_ >= 0'), default => 0 ) ;
-
-# has hard_timeout => ( is => 'ro', isa => Int->where('$_ >= 0'), default => 0 ) ;
+has max_kids        => ( is => 'ro', isa => Int->where('$_ >= 0'), default => 0 ) ;
+has timeout         => ( is => 'ro', isa => Int->where('$_ >= 0'), default => 0 ) ;
+has kids            => ( is => 'ro', isa => HashRef, default => sub { {} } ) ;
+has _old_sigs       => ( is => 'ro', isa => HashRef, default => sub { {} } ) ;
+has backend         => ( is => 'ro', isa => Str,     default => 'System::Command' ) ;
+has debug           => ( is => 'ro', isa => Bool,    default => 0 ) ;
 has run_on_reap     => ( is => 'ro', isa => Maybe [CodeRef] ) ;
 has run_on_spawn    => ( is => 'ro', isa => Maybe [CodeRef] ) ;
 has run_while_alive => ( is => 'ro', isa => Maybe [CodeRef] ) ;
-has backend         => ( is => 'ro', isa => Str,     default => 'System::Command', required => 1 ) ;
-has debug           => ( is => 'ro', isa => Bool,    default => 0 ) ;
-has kids            => ( is => 'ro', isa => HashRef, default => sub { {} } ) ;
-has _old_sigs       => ( is => 'ro', isa => HashRef, default => sub { {} } ) ;
 
 # ===== ROLES ==================================================================
 with 'MooX::Object::Pluggable' ;
@@ -253,7 +249,7 @@ sub _wait_one ($self) {
         }
     }
 
-# does not block - unless $run_on_reap blocks
+# does not block - unless $run_on_reap or $run_while_alive blocks
 sub _wait_any ( $self, $stop_after_1st = undef ) {
     $self->_kill_the_old ;
 
@@ -270,7 +266,7 @@ sub _wait_any ( $self, $stop_after_1st = undef ) {
     return ;    # don't return true accidentally
     }
 
-
+# cmd_is_terminated has returned true
 sub _reap ( $self, $pid ) {
     my $done = delete $self->kids->{$pid} ;
 
@@ -283,22 +279,16 @@ sub _reap ( $self, $pid ) {
 
 
 sub _kill_the_old ($self) {
-
-    # my %timeouts ;
-    # $timeouts{INT} = $self->timeout if $self->timeout ;
-    # $timeouts{TERM} = $self->hard_timeout if $self->hard_timeout ;
     return unless $self->timeout ;
-
-    my $cutoff = time() - $self->timeout ;
-    $self->cmd_terminate($_) for $self->_older_than($cutoff) ;
-
-    # foreach my $sig ( sort { $timeouts{$a} <=> $timeouts{$b} } keys %timeouts ) {
-    #     my $cutoff = time() - $timeouts{$sig} ;
-    #     $self->_kill( $sig, $_ ) for $self->_pids_older_than($cutoff) ;
-    #     }
+    $self->cmd_terminate($_) for $self->_older_than( time() - $self->timeout ) ;
     }
 
-# can be overridden in backend roles e.g. S::C::Role::Proc::Bg
+
+sub _older_than ( $self, $age ) {
+    map { $_->{cmd} } grep { $_->{started} < $age } values $self->kids->%* ;
+    }
+
+# can be overridden in backend roles e.g. S::C::Backend::Proc::Bg
 sub cmd_terminate ( $self, $cmd, $kill_sequence = [] ) {
     my @kill_sequence = $kill_sequence->@* || $self->_default_kill_sequence ;
 
@@ -317,11 +307,6 @@ sub cmd_terminate ( $self, $cmd, $kill_sequence = [] ) {
 
 sub _default_kill_sequence ($self) {
     INT => 3, INT => 5, TERM => 2, TERM => 8, KILL => 3, KILL => 7 ;
-    }
-
-
-sub _older_than ( $self, $age ) {
-    map { $_->{cmd} } grep { $_->{started} < $age } values $self->kids->%* ;
     }
 
 # sub _kill ( $self, $sig, $pid ) {
