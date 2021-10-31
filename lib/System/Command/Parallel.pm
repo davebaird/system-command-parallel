@@ -35,6 +35,11 @@ System::Command::Parallel - manage parallel system commands
 
     my $run_on_reap = sub {
         my ($cmd, $id) = @_ ;
+
+        # flush remaining lines
+        print STDOUT "$id: $_\n" for read_lines_nb( $cmd->stdout ) ;
+        print STDERR "$id: $_\n" for read_lines_nb( $cmd->stderr ) ;
+
         $cmd->exit == 0 ? $count_success++ : $count_errors++ ;
         } ;
 
@@ -249,7 +254,7 @@ sub _wait_one ($self) {
         }
     }
 
-# does not block - unless $run_on_reap or $run_while_alive blocks
+# does not block - unless $run_on_reap or $run_while_alive block
 sub _wait_any ( $self, $stop_after_1st = undef ) {
     $self->_kill_the_old ;
 
