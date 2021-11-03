@@ -38,7 +38,7 @@ System::Command::Parallel - manage parallel system commands
         $sp->spawn(
             cmdline => [ $exe, @args ],
             id      => $name,             # optional
-            extra   => { trace => 3 },  # passed to backend
+            extra   => { trace => 3 },    # passed to backend
         }
 
     $sp->wait($optional_timeout) ;
