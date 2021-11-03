@@ -24,39 +24,38 @@ System::Command::Parallel - manage parallel system commands
 
     use System::Command::Parallel qw(read_lines_nb);
 
-    my $count_success = 0 ;
-    my $count_errors  = 0 ;
-
-    my $run_while_alive = sub {
+    my $flush_std_handles = sub {
         my ( $cmd, $id ) = @_ ;
         print STDOUT "$id: $_\n" for read_lines_nb( $cmd->stdout ) ;
         print STDERR "$id: $_\n" for read_lines_nb( $cmd->stderr ) ;
         } ;
 
+    my ($count_success, $count_errors) = (0, 0) ;
+
     my $run_on_reap = sub {
         my ($cmd, $id) = @_ ;
 
-        # flush remaining lines
-        print STDOUT "$id: $_\n" for read_lines_nb( $cmd->stdout ) ;
-        print STDERR "$id: $_\n" for read_lines_nb( $cmd->stderr ) ;
-
         $cmd->exit == 0 ? $count_success++ : $count_errors++ ;
+
+        # flush remaining lines
+        $flush_std_handles->($cmd, $id) ;
         } ;
 
     my $sp = System::Command::Parallel->new(
         max_kids        => 10,
         timeout         => 60,
+        run_while_alive => $flush_std_handles,
         run_on_reap     => $run_on_reap,
-        run_while_alive => $run_while_alive,
         ) ;
 
     my $exe = '/usr/bin/some-prog' ;
 
-    while ( my ($name, @args) = get_name_and_args_from_somewhere() ) {
-        state $c = 0 ;
+    while ( my $name = get_name_from_somewhere() ) {
+        my @args = get_args_from_somewhere( $name ) ;
+
         $sp->spawn(
             cmdline => [ $exe, @args ],
-            id      => sprintf( "%4d $name", ++$c),             # optional
+            id      => $name,             # optional
             extra   => { trace => 3 },  # passed to backend
         }
 
