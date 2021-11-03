@@ -11,12 +11,17 @@ System::Command::Parallel - manage parallel system commands
 
     my $run_while_alive = sub {
         my ( $cmd, $id ) = @_ ;
-        print STDOUT "$_\n" for read_lines_nb( $cmd->stdout ) ;
-        print STDERR "$_\n" for read_lines_nb( $cmd->stderr ) ;
+        print STDOUT "$id: $_\n" for read_lines_nb( $cmd->stdout ) ;
+        print STDERR "$id: $_\n" for read_lines_nb( $cmd->stderr ) ;
         } ;
 
     my $run_on_reap = sub {
         my ($cmd, $id) = @_ ;
+
+        # flush remaining lines
+        print STDOUT "$id: $_\n" for read_lines_nb( $cmd->stdout ) ;
+        print STDERR "$id: $_\n" for read_lines_nb( $cmd->stderr ) ;
+
         $cmd->exit == 0 ? $count_success++ : $count_errors++ ;
         } ;
 
@@ -29,10 +34,11 @@ System::Command::Parallel - manage parallel system commands
 
     my $exe = '/usr/bin/some-prog' ;
 
-    while ( my ($id, @args) = get_id_and_args_from_somewhere() ) {
+    while ( my ($name, @args) = get_name_and_args_from_somewhere() ) {
+        state $c = 0 ;
         $sp->spawn(
             cmdline => [ $exe, @args ],
-            id      => $id,             # optional
+            id      => sprintf( "%4d $name", ++$c),             # optional
             extra   => { trace => 3 },  # passed to backend
         }
 
